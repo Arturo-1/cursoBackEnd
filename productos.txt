@@ -1,0 +1,4 @@
+[{"title":"celular","price":"1000","thumbnail":"img-celular","id":0},
+{"title":"tablet","price":"2000","thumbnail":"img-tablet","id":1},
+{"title":"Laptop","price":"5000","thumbnail":"img-laptop","id":2},
+{"title":"desktop","price":"4000","thumbnail":"img-desktop","id":3}]
