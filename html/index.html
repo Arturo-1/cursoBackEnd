@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Desafio 4</title>
+</head>
+<style>
+    .container {
+        margin-top: 40px;
+        margin-left: 40px;
+    }
+    
+    form {
+        display: flex;
+    }
+    
+    .divform {
+        display: inline-block;
+        margin-top: 20px;
+    }
+</style>
+
+<body>
+    <form action="/api/productos" method="post">
+        <div class="container">
+            <h2>Datos Producto</h2>
+            <div class="divform">
+                <label for="">Producto:</label>
+                <input type="text" placeholder="ingrese nombre" name="title">
+            </div><br>
+            <div class="divform">
+                <label for="">Precio:</label>
+                <input type="text" placeholder="ingrese precio producto" name="price">
+            </div><br>
+            <div class="divform">
+                <label for="">Tipo Miniatura:</label>
+                <input type="text" placeholder="ingrese tipo de minuatura" name="thumbnail">
+            </div><br>
+
+            <div><button type="submit" class="divform" value="subir">Enviar Producto</button></div>
+        </div>
+    </form>
+
+</body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+</html>
