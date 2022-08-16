@@ -1,90 +1,175 @@
-import mongoose from 'mongoose'
-import StringMongoConfig from '../config.js'
-await mongoose.connect(StringMongoConfig);
-console.log("conexion establecida mongo")
+import mongoose from "mongoose";
+import dbConfig from "../dbConfig.js";
+
+await mongoose.connect(dbConfig.mongodb.connectionString);
+console.log("Conexión establecida con Mongo")
+
 class ContenedorMongo {
-    constructor(collection, schema) {
-        //this.Productos = mongoose.model(collection, new mongoose.Schema(schema));
-        this.Carritos = mongoose.model(collection, new mongoose.Schema(schema));
+    constructor(collectionName, schema) {
+        this.collection = mongoose.model(collectionName, new mongoose.Schema(schema));
     }
 
-    /*  async ReadProductos() {
-         try {
-             const DatosProductos = await this.Productos.find()
-             console.log('ProductosRead', DatosProductos)
- 
-         } catch (err) {
-             console.log(err)
-         }
-     }
-     async ReadProductosbyID(id) {
-         try {
-             const DatosProductos = await this.Productos.find({ _id: id })
-             console.log('ProductosById', DatosProductos)
- 
-         } catch (err) {
-             console.log(err)
-         }
-     }
-     async saveProducts(datosproducto) {
-         try {
-             await this.Productos.insertMany(datosproducto)
-             console.log("Producto insertado")
- 
-         } catch (err) {
-             console.log(err)
-         }
-     }
-     async delProducts(id) {
-         try {
-             await this.Productos.deleteOne({ _id: id })
-             console.log("Producto Eliminado")
- 
-         } catch (err) {
-             console.log(err)
-         }
-     }
- 
-     async UpdateProducts(id) {
-         try {
-             await this.Productos.updateOne({ _id: id }, { $set: { title: "cacahuate" } })
-             console.log("Producto Actualizado")
- 
-         } catch (err) {
-             console.log(err)
-         }
-     }
-  */
-    //Empieza seccion carrito
+    // guarda producto en contenedor productos, o guarda cart en contenedor carts  
+    async save(objeto) {
+        objeto.timestamp = Date.now();
+        const objetoModel = new this.collection(objeto)
 
-    async ReadCarrito() {
         try {
-            const DatosCarrito = await this.Carritos.find()
-            console.log('CarritoRead', DatosCarrito)
-
+            const obj = await objetoModel.save()
+            return { success: `cargado con id ${obj._id}` };
         } catch (err) {
-            console.log(err)
-        }
-    }
-    async InsertCarrito(datosCarrito) {
-        try {
-            await this.Carritos.insertMany(datosCarrito)
-            console.log('Se inserto carrito')
-
-        } catch (err) {
-            console.log(err)
+            console.log("error guardando. Code: ", err);
         }
     }
 
-    async InsertProductoCarrito(idcarrito, datosCarrito) {
+    // actualiza producto en contenedor productos 
+    async saveById(id, objeto) {
+        objeto._id = id;
+        objeto.timestamp = Date.now();
+        const objetoModel = new this.collection(objeto)
+        objetoModel.isNew = false;
+
         try {
-            let arrayProdutos = await this.Carritos.find({ _id: idcarrito }, { _id: 0, productos: 1 })
-            arrayProdutos.push(datosCarrito)
-            await this.Carritos.updateMany({ _id: idcarrito }, { $set: { productos: arrayProdutos } })
-            console.log('Se agrego un producto al carrito:', idcarrito)
+            await objetoModel.save();
+            return { success: `producto con id ${id} actualizado` }
+        } catch (err) {
+            return { error: "producto no encontrado o Schema invalido. Ingresar id correctamente y seguir Schema (nombre, precio, thumbnail)" }
+
+        }
+    }
+
+    // retorna producto del contenedor productos, o retorna cart del contenedor carts 
+    async getById(id) {
+        try {
+            const validId = mongoose.isValidObjectId(id);
+            if (validId) {
+                const object = await this.collection.findOne({ _id: id }, { __v: 0 });
+                return (object ? object : { error: `id ${id} no encontrado` });
+            } else {
+                return { error: `id ${id} no encontrado` }
+            }
 
         } catch (err) {
-            console.log(err)
+            console.log("error buscando por id: ", err)
+        }
+
+    }
+
+    //  retorna todos los productos del contenedor productos, o retorna todos los carts del contenedor carts 
+    async getAll() {
+        try {
+            const objetos = await this.collection.find({}, { __v: 0 })
+            return objetos;
+        } catch (err) {
+            return { error: "error buscando en coleccion" };
+        }
+    }
+
+    // elimina un producto del contenedor productos, o elimina un cart del contenedor carts 
+    async deleteById(id) {
+        try {
+            const validUserId = mongoose.isValidObjectId(id);
+            if (validUserId) {
+                const del = await this.collection.deleteOne({ _id: id })
+                return (del.deletedCount > 0 ? { success: `id ${id} eliminado` } : { error: `id ${id} no encontrado` })
+            } else {
+                return { error: `id ${id} no encontrado` }
+            }
+        } catch (err) {
+            console.log("error borrando por id: ", err)
+        }
+    }
+
+    //elimina productos del contenedor productos
+    async deleteAll() {
+        try {
+            await this.collection.deleteMany({})
+            return { success: "collecion vaciada" }
+        } catch (err) {
+            console.log("error vaciando coleccion: ", err)
+        }
+    }
+
+    // retorna todos los productos del carro 
+    async getAllByCartId(id) {
+        const cart = await this.collection.findOne({ _id: id }, { __v: 0 })
+        if (cart === null) {
+            return { error: `carrito de id ${id} no encontrado` }
+        }
+        return (cart ? .productos ? .length > 0 ? cart.productos : [])
+    }
+
+    // guarda producto en carro 
+    async saveByCartId(cartId, producto) {
+        try {
+            const objetoCart = await this.getById(cartId);
+            if (objetoCart.error) {
+                return { error: `carrito de id ${cartId} no encontrado` }
+            } else {
+                objetoCart.productos.push(producto);
+                const objetoModel = new this.collection(objetoCart)
+                try {
+                    await objetoModel.save();
+                    return { success: `producto de id ${producto._id} agregado al cart de id ${cartId}` }
+                } catch (err) {
+                    console.log("error guardando producto en carrito: ", err)
+                }
+            }
+        } catch (err) {
+            console.log("eror guardando en carrito: ", err)
+        }
+    }
+
+    // elimina producto de carro 
+    async deleteByCartId(cartId, prodId) {
+        try {
+            const cart = await this.getById(cartId)
+
+            if (cart.error) {
+                return { error: `carrito de id ${cartId} no encontrado` }
+            } else {
+                const productos = [] && cart.productos;
+                const index = productos.findIndex(producto => producto._id == prodId);
+
+                if (index != -1) {
+                    productos.splice(index, 1)
+                    cart.productos = productos;
+                    const objetoModel = new this.collection(cart);
+                    objetoModel.isNew = false;
+
+                    try {
+                        await objetoModel.save()
+                        return { success: `producto de id ${prodId} eliminado del carrito de id ${cartId}` }
+                    } catch (err) {
+                        console.log("error eliminando producto del carrito: ", err)
+                    }
+                } else {
+                    return { error: `producto de id ${prodId} no encontrado en el carrito de id ${cartId}` }
+                }
+            }
+        } catch (err) {
+            console.log("error eliminando producto del carrito: ", err)
+        }
+    }
+
+    // vacia carro 
+    async emptyCartById(id) {
+        try {
+            const cart = await this.getById(id);
+            if (cart.error) {
+                return { error: `carrito de id ${id} no encontrado` }
+            } else {
+                cart.productos = [];
+                const objetoModel = new this.collection(cart)
+                try {
+                    await objetoModel.save();
+                    return { success: `carrito de id ${id} vaciado` }
+                } catch (err) {
+                    console.log("error vaciando carrito: ", err)
+                }
+            }
+        } catch (err) {
+            console.log("error vaciando carrito: ", err)
         }
     }
 }

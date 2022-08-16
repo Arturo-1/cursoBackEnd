@@ -1,38 +1,45 @@
-//import CarritosDaoFirebase from "./carritos/CarritosDaoFirebase";
-//import CarritosDaoMongo from "./carritos/CarritosDaoMongo";
-//import ProductosDaoFirebase from "./productos/ProductosDaoFirebase";
-const { default: ProductosDaoMongo } = await import("./productos/ProductosDaoMongo.js");
-let ProductDao = new ProductosDaoMongo();
-const { default: CarritosDaoMongo } = await import("./carritos/CarritosDaoMongo.js");
-let CarritoDao = new CarritosDaoMongo();
+import dotenv from "dotenv";
+dotenv.config();
 
+let ProductoDao;
+let CarritoDao;
 
-const main = async () => {
-    /* Funciones productos
-    await ProductDao.ReadProductos()
-    await ProductDao.ReadProductosbyID("62e33b30660e1d2335d779a2")
-    let DatoInsert = [{ "title": "Producto3", "price": "10.90", "thumbnail": "foto descript" }]
-    await ProductDao.saveProducts(DatoInsert)
-    await ProductDao.delProducts("62e33b30660e1d2335d779a2")
-    await ProductDao.UpdateProducts("62e342271e2e8194de3f9a19")*/
+switch (process.env.DATABASE.toUpperCase()) {
 
-    /*Funciones carrito*/
-    await CarritoDao.ReadCarrito()
-    let DatoInsert = [{ timestamp: "08/06/2022", productos: [] }]
-    await CarritoDao.InsertCarrito(DatoInsert)
-    let DatoInsertProductos = [{ "id": "62e34284d3e8d1f41de9e627", "timestamp": "07/06/2022", "nombre": "Producto1", "descripcion": "descProducto1", "codigo": "111111", "foto": "Foto1", "precio": "10.10", "cantidad": "1" }]
+  case "FIREBASE":
+    const { default: ProductoDaoFirebase } = await import(
+      "./productos/ProductoDaoFirebase.js"
+    );
+    const { default: CarritoDaoFirebase } = await import(
+      "./carritos/CarritoDaoFirebase.js"
+    );
 
-    await CarritoDao.InsertProductoCarrito("62e34bd7ea4647c32ca12674", DatoInsertProductos)
+    ProductoDao = new ProductoDaoFirebase();
+    CarritoDao = new CarritoDaoFirebase();
 
+    break;
 
-    /*await ProductDao.ReadProductosbyID("62e33b30660e1d2335d779a2")
-    let DatoInsert = [{ "title": "Producto3", "price": "10.90", "thumbnail": "foto descript" }]
-    await ProductDao.saveProducts(DatoInsert)
-    await ProductDao.delProducts("62e33b30660e1d2335d779a2")
-    await ProductDao.UpdateProducts("62e342271e2e8194de3f9a19")*/
+  case "MONGO":
+    const { default: ProductoDaoMongo } = await import(
+      "./productos/ProductoDaoMongo.js"
+    );
+    const { default: CarritoDaoMongo } = await import(
+      "./carritos/CarritoDaoMongo.js"
+    );
 
+    ProductoDao = new ProductoDaoMongo();
+    CarritoDao = new CarritoDaoMongo();
 
+    break;
+
+  case 'FS':
+    const { default: ContenedorFS } = await import("../contenedores/ContenedorFS.js")
+    ProductoDao = new ContenedorFS("./src/other-dbs/fs-db/products.json", "./src/other-dbs/fs-db/productIds.json", "./src/other-dbs/fs-db/deletedProducts.json", "producto");
+    CarritoDao = new ContenedorFS("./src/other-dbs/fs-db/carts.json", "./src/other-dbs/fs-db/cartIds.json", "./src/other-dbs/fs-db/deletedCarts.json", "carrito");
+    ProductoDao.init("Productos")
+    CarritoDao.init("Carritos")
+
+    break;
 }
 
-main()
-
+export { ProductoDao, CarritoDao };
